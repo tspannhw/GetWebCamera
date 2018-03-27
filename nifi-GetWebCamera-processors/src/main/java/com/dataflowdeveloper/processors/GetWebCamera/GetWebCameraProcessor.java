@@ -173,13 +173,6 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 												IOUtils.write(bytes, out);
 											}
 
-											// BufferedImage image = wcam.getImage();
-											//
-											// // save image to PNG file
-											// if ( image != null ) {
-											// ImageIO.write(image, "PNG", new File("image2.png"));
-											// }
-
 											wcam.close();
 										}
 									}
@@ -206,18 +199,6 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 								// No Webcameras found
 								wasError.set(true);
 							}
-							// webcam.setViewSize(WebcamResolution.VGA.getSize());
-							// WebcamUtils.capture(webcam, fileNameToWrite, ImageUtils.FORMAT_PNG);
-							// byte[] bytes = WebcamUtils.getImageBytes(webcam, "jpg");
-							//
-							// getLogger().debug(
-							// String.format("read %d bytes from captured image file", new Object[] {
-							// bytes.length }));
-							//
-							// IOUtils.write(bytes, out);
-							//
-							// ImageIO.write(webcam.getImage(), "PNG", new File(fileNameToWrite + ".png"));
-							// webcam.close();
 						} catch (WebcamException e) {
 							getLogger().error("Image failed to write " + e.getLocalizedMessage());
 							wasError.set(true);

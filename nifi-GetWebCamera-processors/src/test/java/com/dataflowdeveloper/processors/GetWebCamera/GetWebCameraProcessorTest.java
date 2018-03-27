@@ -30,32 +30,32 @@ import org.junit.Test;
 
 import com.dataflowdeveloper.processors.GetWebCamera.GetWebCameraProcessor;
 
-
-/** Support this tool  http://webcam-capture.sarxos.pl/
+/**
+ * Support this tool http://webcam-capture.sarxos.pl/
  * 
  * @author tspann
  *
  */
 public class GetWebCameraProcessorTest {
 
-    private TestRunner testRunner;
+	private TestRunner testRunner;
 
-    @Before
-    public void init() {
-        testRunner = TestRunners.newTestRunner(GetWebCameraProcessor.class);
-    }
+	@Before
+	public void init() {
+		testRunner = TestRunners.newTestRunner(GetWebCameraProcessor.class);
+	}
 
 	@Test
 	public void testProcessor() {
-		
-		testRunner.setProperty(  "imagefilename" , "initialimag343434");
+
+		testRunner.setProperty("imagefilename", "initialimag343434");
 		testRunner.setProperty("cameraname", "Display");
-		
-		try {
-			testRunner.enqueue(new FileInputStream(new File("src/test/resources/test.csv")));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
+//
+//		try {
+//			testRunner.enqueue(new FileInputStream(new File("src/test/resources/test.csv")));
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		}
 
 		testRunner.setValidateExpressionUsage(false);
 		testRunner.run();
@@ -64,18 +64,18 @@ public class GetWebCameraProcessorTest {
 
 		for (MockFlowFile mockFile : successFiles) {
 			try {
-				System.out.println("Size: " + mockFile.getSize() );
-				
-				Map<String, String> attributes =  mockFile.getAttributes();
-				
-				 for (String attribute : attributes.keySet()) {				 
-					 System.out.println("Attribute:" + attribute + " = " + mockFile.getAttribute(attribute));
-				 }
-				
+				System.out.println("Size: " + mockFile.getSize());
+
+				Map<String, String> attributes = mockFile.getAttributes();
+
+				for (String attribute : attributes.keySet()) {
+					System.out.println("Attribute:" + attribute + " = " + mockFile.getAttribute(attribute));
+				}
+
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
 	}
-	
+
 }
