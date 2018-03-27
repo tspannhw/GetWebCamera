@@ -159,7 +159,7 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 								if (Webcam.getWebcams().size() > 1) {
 									for (Webcam wcam : Webcam.getWebcams()) {
 										if (wcam != null && wcam.getName() != null
-												&& wcam.getName().contains(cameraNameFinal)) {
+												&& wcam.getName().toUpperCase().contains(cameraNameFinal.toUpperCase())) {
 											wcam.setViewSize(WebcamResolution.VGA.getSize());
 											wcam.open();
 											WebcamUtils.capture(wcam, fileNameToWrite, ImageUtils.FORMAT_PNG);
