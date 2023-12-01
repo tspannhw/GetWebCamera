@@ -15,17 +15,41 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.dataflowdeveloper</groupId>
         <artifactId>GetWebCamera</artifactId>
-        <version>1.0</version>
+        <version>3.0</version>
     </parent>
 
     <artifactId>nifi-GetWebCamera-processors</artifactId>
     <packaging>jar</packaging>
+    <properties>
+        <core-image.version>1.3.10</core-image.version>
+        <ij.version>1.51h</ij.version>
+        <imageio.version>3.3.2</imageio.version>
+        <tess4j.version>4.5.1</tess4j.version>
+        <tesseract-platform.version>4.1.0-1.5.2</tesseract-platform.version>
+        <opencv.version>3.4.2-0</opencv.version>
+        <javacv-platform.version>1.5.9</javacv-platform.version>
+        <webcam-capture.version>0.3.12</webcam-capture.version>
+        <imgscalr-version>4.2</imgscalr-version>
+        <thumbnailator-version>0.4.11</thumbnailator-version>
+        <marvin-version>1.5.5</marvin-version>
+        <javafx-graphics.version>11</javafx-graphics.version>
+    </properties>
+
 
     <dependencies>
+
+
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>${javacv-platform.version}</version>
+        </dependency>
+
+
         <dependency>
             <groupId>org.apache.nifi</groupId>
             <artifactId>nifi-api</artifactId>
@@ -33,12 +57,9 @@
         <dependency>
             <groupId>org.apache.nifi</groupId>
             <artifactId>nifi-utils</artifactId>
+            <version>1.24.0</version>
         </dependency>
-<dependency>
-  <groupId>com.github.sarxos</groupId>
-  <artifactId>webcam-capture</artifactId>
-  <version>0.3.10</version>
-</dependency>
+
        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -52,8 +73,13 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <scope>test</scope>
         </dependency>
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>1.2.6</version>
+</dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

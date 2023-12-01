@@ -48,8 +48,7 @@ public class GetWebCameraProcessorTest {
 	@Test
 	public void testProcessor() {
 
-		testRunner.setProperty("imagefilename", "initialimag343434");
-		testRunner.setProperty("cameraname", "Display");
+	testRunner.setProperty("imagefilename", "initialimag343434.jpg");
 //
 //		try {
 //			testRunner.enqueue(new FileInputStream(new File("src/test/resources/test.csv")));
@@ -57,11 +56,12 @@ public class GetWebCameraProcessorTest {
 //			e.printStackTrace();
 //		}
 
-		testRunner.setValidateExpressionUsage(false);
+		testRunner.setValidateExpressionUsage(true);
 		testRunner.run();
 		testRunner.assertValid();
 		List<MockFlowFile> successFiles = testRunner.getFlowFilesForRelationship(GetWebCameraProcessor.REL_SUCCESS);
 
+		System.out.println("SF:" + successFiles.size());
 		for (MockFlowFile mockFile : successFiles) {
 			try {
 				System.out.println("Size: " + mockFile.getSize());
@@ -71,6 +71,7 @@ public class GetWebCameraProcessorTest {
 				for (String attribute : attributes.keySet()) {
 					System.out.println("Attribute:" + attribute + " = " + mockFile.getAttribute(attribute));
 				}
+				System.out.println("File size:" + mockFile.getData().length ) ;
 
 			} catch (Throwable e) {
 				e.printStackTrace();

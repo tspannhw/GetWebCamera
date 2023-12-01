@@ -16,10 +16,9 @@
  */
 package com.dataflowdeveloper.processors.GetWebCamera;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
-
-// see:   https://github.com/sarxos/webcam-capture/blob/master/webcam-capture/src/example/java/TakePictureExample.java
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +26,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.nifi.expression.ExpressionLanguageScope;
+import org.apache.nifi.flowfile.attributes.CoreAttributes;
+import org.bytedeco.javacv.*;
+import org.bytedeco.opencv.opencv_core.IplImage;
+import static org.bytedeco.opencv.helper.opencv_imgcodecs.cvSaveImage;
+import org.bytedeco.javacv.*;
+import org.bytedeco.opencv.opencv_core.IplImage;
+import static org.bytedeco.opencv.helper.opencv_imgcodecs.cvSaveImage;
+
+import java.awt.image.DataBufferByte;
+import  java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.behavior.EventDriven;
@@ -48,20 +60,22 @@ import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
+import org.apache.nifi.annotation.behavior.ReadsAttribute;
+import org.apache.nifi.annotation.behavior.ReadsAttributes;
+import org.opencv.core.MatOfByte;
+import org.opencv.imgcodecs.Imgcodecs;
 
-import com.github.sarxos.webcam.Webcam;
-import com.github.sarxos.webcam.WebcamException;
-import com.github.sarxos.webcam.WebcamResolution;
-import com.github.sarxos.webcam.WebcamUtils;
-import com.github.sarxos.webcam.util.ImageUtils;
+import javax.imageio.ImageIO;
+
 
 @EventDriven
 @SupportsBatching
 @SideEffectFree
-@Tags({ "webcam", "computer vision", "image", "web camera", "usb web camera" })
+@Tags({ "webcam", "computer vision", "camera", "image", "web camera", "usb web camera" })
 @CapabilityDescription("Ingest an image from a camera")
 @SeeAlso({})
-@WritesAttributes({ @WritesAttribute(attribute = "probilities", description = "The probabilites and labels") })
+@ReadsAttributes({ @ReadsAttribute(attribute = "imagefilename", description = "imagefilename") })
+@WritesAttributes({ @WritesAttribute(attribute = "mime_type", description = "image") })
 /**
  * 
  * @author tspann
@@ -69,19 +83,15 @@ import com.github.sarxos.webcam.util.ImageUtils;
  */
 public class GetWebCameraProcessor extends AbstractProcessor {
 
-	private static final String IMAGE_TYPE_USED = "png";
+	private static final String IMAGE_TYPE_USED = "jpg";
 	private static final String IMAGEFILENAME = "imagefilename";
-	private static final String CAMERANAME = "cameraname";
 	public static final String PROPERTY_NAME_EXTRA = "Extra Resources";
 
 	public static final PropertyDescriptor FILE_NAME = new PropertyDescriptor.Builder().name(IMAGEFILENAME)
-			.description("File Name for the output image").required(true).expressionLanguageSupported(true)
-			.addValidator(StandardValidators.NON_EMPTY_VALIDATOR).build();
-	public static final PropertyDescriptor CAMERA_NAME = new PropertyDescriptor.Builder().name(CAMERANAME)
-			.description("Full or partial name of the camera you want to use, leave blank if you have only one")
-			.required(true).expressionLanguageSupported(true).addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+			.expressionLanguageSupported( ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
+			.description("File Name for the output image").required(false).defaultValue("image.jpg")
+			.addValidator(StandardValidators.NON_BLANK_VALIDATOR)
 			.build();
-
 	public static final Relationship REL_SUCCESS = new Relationship.Builder().name("success")
 			.description("Successfully determined image.").build();
 	public static final Relationship REL_FAILURE = new Relationship.Builder().name("failure")
@@ -94,13 +104,13 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 	protected void init(final ProcessorInitializationContext context) {
 		final List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
 		descriptors.add(FILE_NAME);
-		descriptors.add(CAMERA_NAME);
 		this.descriptors = Collections.unmodifiableList(descriptors);
 		final Set<Relationship> relationships = new HashSet<Relationship>();
 		relationships.add(REL_SUCCESS);
 		relationships.add(REL_FAILURE);
 		this.relationships = Collections.unmodifiableSet(relationships);
 	}
+
 
 	@Override
 	public Set<Relationship> getRelationships() {
@@ -117,8 +127,33 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 		return;
 	}
 
+	public static byte[] IplImageToByteArray2(IplImage src) {
+		byte[] barray = new byte[src.imageSize()];
+		src.getByteBuffer().get(barray);
+
+
+		return barray;
+	}
+
+	public static BufferedImage toBufferedImage(IplImage src) {
+		OpenCVFrameConverter.ToIplImage iplConverter = new OpenCVFrameConverter.ToIplImage();
+		Java2DFrameConverter bimConverter = new Java2DFrameConverter();
+		Frame frame = iplConverter.convert(src);
+		BufferedImage img = bimConverter. convert(frame);
+		img.flush();
+		return img;
+	}
+	public static byte[] toByteArray(BufferedImage bi, String format)
+			throws IOException {
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ImageIO.write(bi, format, baos);
+		byte[] bytes = baos.toByteArray();
+		return bytes;
+
+	}
+
 	/**
-	 * https://github.com/sarxos/webcam-capture/blob/master/webcam-capture/src/example/java/DifferentFileFormatsExample.java
 	 * 
 	 */
 	@Override
@@ -138,15 +173,6 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 			}
 			final String fileNameToWrite = fileName;
 
-			String cameraName = flowFile.getAttribute(CAMERANAME);
-			if (cameraName == null) {
-				cameraName = context.getProperty(CAMERANAME).evaluateAttributeExpressions(flowFile).getValue();
-			}
-			if (cameraName == null) {
-				cameraName = "";
-			}
-			final String cameraNameFinal = cameraName;
-			
 			try {
 				final AtomicReference<Boolean> wasError = new AtomicReference<>(false);
 
@@ -154,58 +180,37 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 
 					@Override
 					public void process(OutputStream out) throws IOException {
+
 						try {
-							if (!Webcam.getWebcams().isEmpty()) {
-								if (Webcam.getWebcams().size() > 1) {
-									for (Webcam wcam : Webcam.getWebcams()) {
-										if (wcam != null && wcam.getName() != null
-												&& wcam.getName().toUpperCase().contains(cameraNameFinal.toUpperCase())) {
-											wcam.setViewSize(WebcamResolution.VGA.getSize());
-											wcam.open();
-											WebcamUtils.capture(wcam, fileNameToWrite, ImageUtils.FORMAT_PNG);
-											byte[] bytes = WebcamUtils.getImageBytes(wcam, IMAGE_TYPE_USED);
+							FrameGrabber grabber = new OpenCVFrameGrabber(0);
+							OpenCVFrameConverter.ToIplImage converter = new OpenCVFrameConverter.ToIplImage();
+							grabber.start();
+							Frame frame = grabber.grab();
+							grabber.stop();
+							grabber.close();
+							IplImage img = converter.convert(frame);
+							frame.close();
+							//byte[] bytes = IplImageToByteArray2(img);
 
-											if (bytes != null) {
-												getLogger().debug(String.format("webcamer name %s", wcam.getName()));
-												getLogger()
-														.debug(String.format("read %d bytes from captured image file",
-																new Object[] { bytes.length }));
-												IOUtils.write(bytes, out);
-											}
+							BufferedImage bufImage = toBufferedImage(img);
+							byte[] bytes = toByteArray(bufImage, "jpg");
 
-											wcam.close();
-										}
-									}
-								}
-								else {
-									// only have one webcam
-									Webcam wcam = Webcam.getDefault();
-									wcam.setViewSize(WebcamResolution.VGA.getSize());
-									wcam.open();
-									WebcamUtils.capture(wcam, fileNameToWrite, ImageUtils.FORMAT_PNG);
-									byte[] bytes = WebcamUtils.getImageBytes(wcam, IMAGE_TYPE_USED);
+							//cvSaveImage("image.jpg", img);
 
-									if (bytes != null) {
-										getLogger().debug(String.format("webcamer name %s", wcam.getName()));
-										getLogger().debug(String.format("read %d bytes from captured image file",
-												new Object[] { bytes.length }));
-										IOUtils.write(bytes, out);
-									}
-
-									wcam.close();
-								}
-							} 
-							else {
-								// No Webcameras found
-								wasError.set(true);
+							if (bytes != null) {
+									getLogger().debug(String.format("read %d bytes from captured image file",
+											new Object[] { bytes.length }));
+									IOUtils.write(bytes, out);
 							}
-						} catch (WebcamException e) {
-							getLogger().error("Image failed to write " + e.getLocalizedMessage());
-							wasError.set(true);
+						} catch (Throwable e) {
+							e.printStackTrace();
 						}
-
 					}
 				});
+
+				flowFile = session.putAttribute(flowFile, CoreAttributes.MIME_TYPE.key(), "image/jpeg");
+				flowFile = session.putAttribute(flowFile, CoreAttributes.FILENAME.key(), fileNameToWrite);
+				flowFile = session.putAttribute(flowFile, "imageoutputname", fileNameToWrite);
 
 				if (wasError.get()) {
 					session.transfer(flowFile, REL_FAILURE);
@@ -213,13 +218,15 @@ public class GetWebCameraProcessor extends AbstractProcessor {
 					session.transfer(flowFile, REL_SUCCESS);
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 				throw new ProcessException(e);
 			}
 
-			session.commit();
+			session.commitAsync();
 		} catch (
 
 		final Throwable t) {
+			System.out.println("Error");
 			getLogger().error("Unable to process GetWebCamera Processor file " + t.getLocalizedMessage());
 			throw new ProcessException(t);
 		}

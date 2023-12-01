@@ -1,1 +1,2 @@
-cp nifi-GetWebCamera-nar/target/nifi-GetWebCamera-nar-1.0.nar /Volumes/seagate/apps/nifi-1.5.0.3.1.1.0-35/lib
+mvn clean package
+cp nifi-GetWebCamera-nar/target/nifi-GetWebCamera-nar-3.0.nar /Users/tspann/Downloads/nifi-1.23.1.2.1.6.0-323/lib
